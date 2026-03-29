@@ -10,6 +10,7 @@ jobs:
   test:
     name: Test & Build
     runs-on: ubuntu-24.04
+    environment: Produção
     steps:
       - name: Checkout frontend repository
         uses: actions/checkout@v4
@@ -58,6 +59,7 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-24.04
+    environment: Produção
     needs: test
     permissions:
       contents: read
@@ -93,6 +95,7 @@ jobs:
   deploy-s3:
     name: Deploy to S3
     runs-on: ubuntu-24.04
+    environment: Produção
     needs: test
     if: github.ref == 'refs/heads/main'
     steps:

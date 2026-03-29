@@ -24,6 +24,7 @@ jobs:
   publish-database:
     name: Publish Database Image
     runs-on: ubuntu-24.04
+    environment: Produção
     outputs:
       image_tag: ${{ steps.meta.outputs.version }}
     

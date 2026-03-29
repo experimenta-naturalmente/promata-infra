@@ -14,6 +14,7 @@ jobs:
   test:
     name: Test & Lint
     runs-on: ubuntu-24.04
+    environment: Produção
     steps:
       - name: Checkout backend repository
         uses: actions/checkout@v4
@@ -52,6 +53,7 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-24.04
+    environment: Produção
     needs: test
     permissions:
       contents: read
@@ -86,6 +88,7 @@ jobs:
   build:
     name: Build & Push Docker Image
     runs-on: ubuntu-24.04
+    environment: Produção
     needs: test
     if: github.ref == 'refs/heads/main'
     steps:
@@ -121,6 +124,7 @@ jobs:
   deploy:
     name: Deploy to EC2
     runs-on: ubuntu-24.04
+    environment: Produção
     needs: build
     if: github.ref == 'refs/heads/main'
     steps:

@@ -34,6 +34,7 @@ jobs:
   terraform:
     name: Provision Infrastructure
     runs-on: ubuntu-24.04
+    environment: Produção
     if: github.event.inputs.action != 'config-only'
     outputs:
       ec2_ip: ${{ steps.outputs.outputs.ec2_ip }}
@@ -130,6 +131,7 @@ jobs:
   ansible:
     name: Configure & Deploy Stack
     runs-on: ubuntu-24.04
+    environment: Produção
     needs: terraform
     if: |
       always() && 
@@ -308,6 +310,7 @@ jobs:
   summary:
     name: Deployment Summary
     runs-on: ubuntu-24.04
+    environment: Produção
     needs: [terraform, ansible]
     if: always() && github.event.inputs.action != 'destroy'
     
