@@ -232,7 +232,7 @@ jobs:
           docker_compose_version: v2.31.0
           
           # Application Images
-          backend_image: norohim/pro-mata-backend:latest
+          backend_image: experimentanaturalmente/pro-mata-backend:latest
           
           # Stack Environment Variables
           stack_environment:

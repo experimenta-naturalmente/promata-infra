@@ -297,8 +297,8 @@ test_docker_services() {
     # Test Docker registry images (if we can access them)
     info_test "Checking Docker images (requires DockerHub access)"
     
-    local backend_image="norohim/pro-mata-backend-${ENVIRONMENT}:latest"
-    local frontend_image="norohim/pro-mata-frontend-${ENVIRONMENT}:latest"
+    local backend_image="experimentanaturalmente/pro-mata-backend-${ENVIRONMENT}:latest"
+    local frontend_image="experimentanaturalmente/pro-mata-frontend-${ENVIRONMENT}:latest"
     
     # These would need docker CLI access
     info_test "Backend image: $backend_image"

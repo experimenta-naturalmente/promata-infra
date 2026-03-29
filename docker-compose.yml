@@ -81,7 +81,7 @@ services:
 
   # === DATABASE ===
   postgres:
-    image: ${DATABASE_IMAGE:-norohim/pro-mata-database:latest}
+    image: ${DATABASE_IMAGE:-experimentanaturalmente/pro-mata-database:latest}
     container_name: promata-postgres
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-promata}
@@ -101,7 +101,7 @@ services:
 
   # === BACKEND API ===
   backend:
-    image: ${BACKEND_IMAGE:-norohim/pro-mata-backend:latest}
+    image: ${BACKEND_IMAGE:-experimentanaturalmente/pro-mata-backend:latest}
     container_name: promata-backend
     environment:
       # Database

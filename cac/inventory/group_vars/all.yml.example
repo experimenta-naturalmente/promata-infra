@@ -11,8 +11,8 @@ domain_name: promata.com.br
 docker_compose_version: v2.31.0
 
 # Application Images
-backend_image: norohim/pro-mata-backend:latest
-# frontend_image: norohim/pro-mata-frontend:latest  # Not needed (S3/Blob)
+backend_image: experimentanaturalmente/pro-mata-backend:latest
+# frontend_image: experimentanaturalmente/pro-mata-frontend:latest  # Not needed (S3/Blob)
 
 # Stack Environment Variables
 # IMPORTANT: Use GitHub Secrets for sensitive values in production

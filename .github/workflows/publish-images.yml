@@ -15,7 +15,7 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  DATABASE_IMAGE: norohim/pro-mata-database
+  DATABASE_IMAGE: experimentanaturalmente/pro-mata-database
 
 jobs:
   # ============================================================================

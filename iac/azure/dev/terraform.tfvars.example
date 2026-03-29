@@ -18,9 +18,9 @@ cloudflare_zone_id = "YOUR_CLOUDFLARE_ZONE_ID_HERE"
 enable_cloudflare_dns = true
 
 # Application Configuration
-backend_image = "norohim/pro-mata-backend-dev:latest"
-frontend_image = "norohim/pro-mata-frontend-dev:latest"
-migration_image = "norohim/pro-mata-migration-dev:latest"
+backend_image = "experimentanaturalmente/pro-mata-backend-dev:latest"
+frontend_image = "experimentanaturalmente/pro-mata-frontend-dev:latest"
+migration_image = "experimentanaturalmente/pro-mata-migration-dev:latest"
 
 # Database Configuration
 postgres_db = "promata_dev"

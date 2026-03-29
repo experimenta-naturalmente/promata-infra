@@ -162,7 +162,7 @@
           TRAEFIK_LOG_LEVEL=INFO
           
           # Backend Image
-          BACKEND_IMAGE=norohim/pro-mata-backend:latest
+          BACKEND_IMAGE=experimentanaturalmente/pro-mata-backend:latest
 
     - name: Download Traefik config
       get_url:

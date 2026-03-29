@@ -195,7 +195,7 @@ export DOMAIN_NAME=promata.com.br
 export CLOUDFLARE_API_TOKEN=seu-token-aqui
 export CLOUDFLARE_ZONE_ID=seu-zone-id
 export ACME_EMAIL=admin@promata.com.br
-export BACKEND_IMAGE=norohim/pro-mata-backend:latest
+export BACKEND_IMAGE=experimentanaturalmente/pro-mata-backend:latest
 ```
 
 ### Deploy Completo Automatizado

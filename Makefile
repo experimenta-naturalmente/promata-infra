@@ -366,7 +366,7 @@ TRAEFIK_LOG_LEVEL=DEBUG
 CLOUDFLARE_API_TOKEN=
 
 # Backend
-BACKEND_IMAGE=norohim/pro-mata-backend:latest
+BACKEND_IMAGE=experimentanaturalmente/pro-mata-backend:latest
 EOF
 	fi
 	@# Create traefik config for local (HTTP only, no SSL)

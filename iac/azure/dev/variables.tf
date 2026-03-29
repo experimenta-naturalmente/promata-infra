@@ -100,13 +100,13 @@ variable "domain_name" {
 variable "backend_image" {
   description = "Backend Docker image"
   type        = string
-  default     = "norohim/pro-mata-backend-dev:latest"
+  default     = "experimentanaturalmente/pro-mata-backend-dev:latest"
 }
 
 # variable "frontend_image" {
 #   description = "Frontend Docker image"
 #   type        = string
-#   default     = "norohim/pro-mata-frontend-dev:latest"
+#   default     = "experimentanaturalmente/pro-mata-frontend-dev:latest"
 # }
 
 variable "backend_replicas" {
@@ -162,7 +162,7 @@ variable "monitoring_enabled" {
 variable "migration_image" {
   description = "Migration Docker image"
   type        = string
-  default     = "norohim/pro-mata-database-dev:latest"
+  default     = "experimentanaturalmente/pro-mata-database-dev:latest"
 }
 
 # Additional variables from .env configuration
@@ -206,7 +206,7 @@ variable "azure_subscription_id" {
 variable "database_image" {
   description = "Database Docker image"
   type        = string
-  default     = "norohim/pro-mata-database-infrastructure:latest"
+  default     = "experimentanaturalmente/pro-mata-database-infrastructure:latest"
 }
 
 variable "app_version" {
@@ -376,13 +376,13 @@ variable "create_dns_records" {
 variable "database_base_image" {
   description = "Database base image"
   type        = string
-  default     = "norohim/pro-mata-database-dev:latest"
+  default     = "experimentanaturalmente/pro-mata-database-dev:latest"
 }
 
 variable "database_infrastructure_image" {
   description = "Database infrastructure image"
   type        = string
-  default     = "norohim/pro-mata-database-infrastructure:latest"
+  default     = "experimentanaturalmente/pro-mata-database-infrastructure:latest"
 }
 
 variable "umami_website_id" {

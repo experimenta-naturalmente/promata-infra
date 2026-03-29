@@ -168,7 +168,7 @@ services:
 
   # === DATABASE ===
   postgres:
-    image: ${DATABASE_IMAGE:-norohim/pro-mata-database:latest}
+    image: ${DATABASE_IMAGE:-experimentanaturalmente/pro-mata-database:latest}
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-promata}
       - POSTGRES_USER=${POSTGRES_USER:-promata}
@@ -202,7 +202,7 @@ services:
 
   # === BACKEND API ===
   backend:
-    image: ${BACKEND_IMAGE:-norohim/pro-mata-backend:latest}
+    image: ${BACKEND_IMAGE:-experimentanaturalmente/pro-mata-backend:latest}
     environment:
       # Database
       - DATABASE_URL=postgresql://${POSTGRES_USER:-promata}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-promata}?schema=app
