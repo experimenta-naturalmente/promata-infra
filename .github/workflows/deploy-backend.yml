@@ -126,11 +126,18 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Check EC2 Host
+      - name: Check EC2 configuration
         id: check
         run: |
           if [ -z "${{ secrets.EC2_HOST }}" ]; then
-            echo "⚠️ EC2_HOST secret not configured. Skipping deploy."
+            echo "⚠️ EC2_HOST secret not configured."
+            echo "   Run deploy-infra-full.yml first to provision infrastructure,"
+            echo "   then set EC2_HOST and EC2_SSH_KEY secrets from Terraform outputs."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          elif [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+            echo "⚠️ EC2_SSH_KEY secret not configured."
+            echo "   Download the ssh-key artifact from deploy-infra-full.yml"
+            echo "   and set it as EC2_SSH_KEY secret."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT

@@ -132,17 +132,25 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION || 'sa-east-1' }}
 
-      - name: Get S3 Bucket Name
+      - name: Resolve S3 Bucket Name
         id: s3
         run: |
-          # Buscar o bucket de produção criado pelo Terraform
-          BUCKET=$(aws s3 ls | grep "promata-prod-static-assets" | awk '{print $3}' | head -1)
+          BUCKET="${{ vars.AWS_S3_BUCKET }}"
           if [ -z "$BUCKET" ]; then
-            echo "❌ Bucket promata-prod-static-assets-* não encontrado!"
+            echo "❌ AWS_S3_BUCKET variable not configured!"
+            echo "   Set it in Settings > Variables > Actions with the bucket name from Terraform output."
             exit 1
           fi
+
+          # Verify bucket is accessible
+          if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "❌ Bucket '$BUCKET' not found or not accessible."
+            echo "   Run deploy-infra-full.yml first to create the infrastructure."
+            exit 1
+          fi
+
           echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
-          echo "✅ Usando bucket: $BUCKET"
+          echo "✅ Using bucket: $BUCKET"
 
       - name: Sync to S3
         run: |
