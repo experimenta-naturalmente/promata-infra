@@ -79,6 +79,7 @@ module "compute" {
 # ============================================================================
 module "email" {
   source = "./modules/email"
+  count  = var.enable_ses ? 1 : 0
 
   project_name   = var.project_name
   environment    = "prod"

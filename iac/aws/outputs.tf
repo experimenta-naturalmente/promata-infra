@@ -28,12 +28,12 @@ output "s3_bucket_names" {
 
 output "ses_domain_identity" {
   description = "SES domain identity"
-  value       = module.email.ses_domain_identity
+  value       = var.enable_ses ? module.email[0].ses_domain_identity : null
 }
 
 output "ses_smtp_endpoint" {
   description = "SES SMTP endpoint"
-  value       = module.email.ses_smtp_endpoint
+  value       = var.enable_ses ? module.email[0].ses_smtp_endpoint : null
 }
 
 output "dns_records" {
@@ -99,7 +99,7 @@ output "environment_config" {
     manager_ip      = module.compute.manager_public_ip
     worker_ips      = module.compute.worker_public_ips
     s3_buckets      = module.storage.s3_bucket_name
-    ses_endpoint    = module.email.ses_smtp_endpoint
+    ses_endpoint    = var.enable_ses ? module.email[0].ses_smtp_endpoint : null
   }
 }
 

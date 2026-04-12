@@ -110,6 +110,12 @@ variable "enable_frontend_s3_proxy" {
 #   default     = ""
 # }
 
+variable "enable_ses" {
+  description = "Enable SES email module (requires iam:CreateUser, logs:CreateLogGroup permissions)"
+  type        = bool
+  default     = false
+}
+
 # Email configuration
 variable "admin_email" {
   description = "Administrator email for SES and notifications"

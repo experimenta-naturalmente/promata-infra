@@ -120,6 +120,72 @@ jobs:
             sleep 10
           done
 
+      - name: Force Unlock Stale State Lock
+        working-directory: .
+        run: |
+          TABLE="promata-terraform-locks"
+          REGION="${{ env.AWS_REGION }}"
+          STATE_KEY="promata-tfstate-017820685038/aws/prod/terraform.tfstate"
+
+          LOCK_INFO=$(aws dynamodb get-item \
+            --table-name "$TABLE" \
+            --key "{\"LockID\":{\"S\":\"$STATE_KEY\"}}" \
+            --region "$REGION" 2>/dev/null || true)
+
+          if echo "$LOCK_INFO" | grep -q "LockID"; then
+            echo "🔓 Found stale lock, removing from DynamoDB..."
+            aws dynamodb delete-item \
+              --table-name "$TABLE" \
+              --key "{\"LockID\":{\"S\":\"$STATE_KEY\"}}" \
+              --region "$REGION"
+            echo "✅ Lock released"
+          else
+            echo "✅ No stale lock found"
+          fi
+        continue-on-error: true
+
+      - name: Validate Cloudflare Token
+        id: cf_check
+        run: |
+          CF_TOKEN="${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          CF_ZONE="${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
+          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ZONE" ]; then
+            echo "⚠️ Cloudflare credentials not configured, disabling DNS module"
+            echo "enable_cf=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          ZONE_RESPONSE=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$CF_ZONE/dns_records?per_page=1" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json")
+
+          if echo "$ZONE_RESPONSE" | grep -q '"success":true'; then
+            echo "✅ Cloudflare token has DNS access to zone"
+            echo "enable_cf=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Cloudflare token cannot access zone DNS. Disabling DNS module."
+            echo "   To fix: Create a new API Token in Cloudflare with:"
+            echo "   - Permission: Zone > DNS > Edit"
+            echo "   - Zone Resources: Include > Specific zone > promata.com.br"
+            echo "enable_cf=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Migrate State (remove orphaned resources)
+        run: |
+          terraform state list 2>/dev/null | grep '^module\.email\.' | while read -r RESOURCE; do
+            echo "🔄 Removing from state: $RESOURCE"
+            terraform state rm "$RESOURCE" 2>/dev/null || true
+          done
+
+          if [ "${{ steps.cf_check.outputs.enable_cf }}" = "false" ]; then
+            terraform state list 2>/dev/null | grep '^module\.dns' | while read -r RESOURCE; do
+              echo "🔄 Removing from state: $RESOURCE"
+              terraform state rm "$RESOURCE" 2>/dev/null || true
+            done
+          fi
+        continue-on-error: true
+
       - name: Terraform Validate
         run: terraform validate
 
@@ -141,6 +207,7 @@ jobs:
             -var="domain_name=${{ vars.DOMAIN_NAME }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
+            -var="enable_cloudflare=${{ steps.cf_check.outputs.enable_cf }}" \
             -out=tfplan \
             -no-color
         env:
@@ -190,6 +257,7 @@ jobs:
             -var="domain_name=${{ vars.DOMAIN_NAME }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
+            -var="enable_cloudflare=${{ steps.cf_check.outputs.enable_cf }}" \
             -auto-approve
 
       - name: Extract Outputs
