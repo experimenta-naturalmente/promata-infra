@@ -298,20 +298,11 @@ jobs:
 
       - name: Update GitHub Secrets
         if: github.event.inputs.action != 'config-only'
-        env:
-          GH_TOKEN: ${{ secrets.GIT_TOKEN || github.token }}
         run: |
-          echo "📝 Updating EC2_HOST and EC2_SSH_KEY secrets..."
-
-          gh secret set EC2_HOST --body "${{ steps.ec2.outputs.ip }}" || \
-            echo "⚠️ Could not auto-set EC2_HOST. Set manually: gh secret set EC2_HOST --body '${{ steps.ec2.outputs.ip }}'"
-
-          if [ -f ~/.ssh/promata.pem ]; then
-            gh secret set EC2_SSH_KEY < ~/.ssh/promata.pem || \
-              echo "⚠️ Could not auto-set EC2_SSH_KEY. Set manually from the SSH key artifact."
-          else
-            echo "⚠️ SSH key file not found. Set EC2_SSH_KEY manually from the ssh-key artifact."
-          fi
+          echo "📝 To complete setup, run these commands locally:"
+          echo ""
+          echo "gh secret set EC2_HOST --body '${{ steps.ec2.outputs.ip }}'"
+          echo "gh secret set EC2_SSH_KEY < <(cat path/to/ssh_key.pem)"
 
   # ============================================================================
   # SUMMARY
