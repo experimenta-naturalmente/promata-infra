@@ -71,7 +71,7 @@ O Terraform state precisa ser compartilhado entre todos os desenvolvedores e CI/
 ./scripts/terraform/setup-backend-aws.sh
 
 # Verificar se foi criado
-aws s3 ls s3://promata-terraform-state
+aws s3 ls s3://promata-tfstate-017820685038
 ```
 
 **Azure Backend (Blob Storage):**

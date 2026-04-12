@@ -8,7 +8,7 @@
 set -e
 
 # Configurações
-BUCKET_NAME="promata-terraform-state"
+BUCKET_NAME="promata-tfstate-017820685038"
 DYNAMODB_TABLE="promata-terraform-locks"
 REGION="sa-east-1"
 

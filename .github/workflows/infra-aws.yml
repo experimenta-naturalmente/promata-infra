@@ -52,18 +52,20 @@ jobs:
 
       - name: Setup Terraform Backend (S3 + DynamoDB)
         run: |
-          BUCKET="promata-terraform-state"
+          BUCKET="promata-tfstate-017820685038"
           TABLE="promata-terraform-locks"
           REGION="${{ env.AWS_REGION }}"
 
-          BUCKET_EXISTS=false
-          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
-            BUCKET_EXISTS=true
-            echo "✅ S3 bucket already exists"
-          fi
+          HTTP_CODE=$(aws s3api head-bucket --bucket "$BUCKET" 2>&1 | grep -o '[0-9]\{3\}' | head -1 || true)
 
-          if [ "$BUCKET_EXISTS" = "false" ]; then
-            echo "📦 Creating S3 bucket..."
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "✅ S3 bucket already exists and is owned by this account"
+          elif [ "$HTTP_CODE" = "403" ]; then
+            echo "❌ Bucket '$BUCKET' exists but belongs to another AWS account!"
+            echo "   Change the bucket name in backend.tf and workflows."
+            exit 1
+          else
+            echo "📦 Creating S3 bucket '$BUCKET'..."
             aws s3api create-bucket \
               --bucket "$BUCKET" \
               --region "$REGION" \
@@ -85,7 +87,7 @@ jobs:
               --public-access-block-configuration \
               "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 
-            echo "✅ S3 bucket created"
+            echo "✅ S3 bucket created successfully"
           fi
 
           if ! aws dynamodb describe-table --table-name "$TABLE" --region "$REGION" 2>/dev/null; then
@@ -200,6 +202,42 @@ jobs:
           terraform output -raw ssh_private_key >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Save outputs to all repos
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        env:
+          GH_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          EC2_IP="${{ steps.outputs.outputs.ec2_public_ip }}"
+          S3_BUCKET="${{ steps.outputs.outputs.s3_bucket }}"
+          ORG="AGES-Pro-Mata"
+          REPOS=("${{ github.repository }}" "$ORG/backend" "$ORG/frontend")
+
+          if [ -z "$GH_TOKEN" ]; then
+            echo "⚠️ GIT_TOKEN not configured. Set secrets manually."
+            exit 0
+          fi
+
+          terraform output -raw ssh_private_key > /tmp/ssh_key.pem 2>/dev/null || true
+
+          for REPO in "${REPOS[@]}"; do
+            echo "📝 Configuring $REPO..."
+            if [ -n "$EC2_IP" ]; then
+              echo "$EC2_IP" | gh secret set EC2_HOST --repo "$REPO" 2>/dev/null && \
+                echo "  ✅ EC2_HOST" || echo "  ⚠️ EC2_HOST failed"
+            fi
+            if [ -f /tmp/ssh_key.pem ]; then
+              gh secret set EC2_SSH_KEY --repo "$REPO" < /tmp/ssh_key.pem 2>/dev/null && \
+                echo "  ✅ EC2_SSH_KEY" || echo "  ⚠️ EC2_SSH_KEY failed"
+            fi
+            if [ -n "$S3_BUCKET" ]; then
+              gh variable set AWS_S3_BUCKET --repo "$REPO" --body "$S3_BUCKET" 2>/dev/null && \
+                echo "  ✅ AWS_S3_BUCKET=$S3_BUCKET" || echo "  ⚠️ AWS_S3_BUCKET failed"
+            fi
+          done
+          rm -f /tmp/ssh_key.pem
+
       - name: Deployment Summary
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
@@ -210,20 +248,6 @@ jobs:
           echo "- **EC2 IP**: \`${{ steps.outputs.outputs.ec2_public_ip }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **S3 Bucket**: \`${{ steps.outputs.outputs.s3_bucket }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Domain**: https://${{ vars.DOMAIN_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔐 Next Steps: Configure GitHub Secrets" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Run these commands to configure deployment secrets:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Configure EC2 host" >> $GITHUB_STEP_SUMMARY
-          echo "gh secret set EC2_HOST --body '${{ steps.outputs.outputs.ec2_public_ip }}'" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Configure SSH key (run from iac/aws directory after terraform apply)" >> $GITHUB_STEP_SUMMARY
-          echo "gh secret set EC2_SSH_KEY < <(terraform output -raw ssh_private_key)" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Or manually add in Settings > Secrets and Variables > Actions" >> $GITHUB_STEP_SUMMARY
 
       - name: Notify Discord
         if: always() && github.ref == 'refs/heads/main'

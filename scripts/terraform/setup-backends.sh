@@ -49,9 +49,9 @@ case $option in
         # Check AWS
         echo "=== AWS Backend ==="
         if command -v aws &> /dev/null; then
-            if aws s3 ls s3://promata-terraform-state 2>/dev/null; then
+            if aws s3 ls s3://promata-tfstate-017820685038 2>/dev/null; then
                 echo "✅ S3 bucket existe"
-                aws s3 ls s3://promata-terraform-state --recursive 2>/dev/null | head -5
+                aws s3 ls s3://promata-tfstate-017820685038 --recursive 2>/dev/null | head -5
             else
                 echo "❌ S3 bucket não encontrado ou sem acesso"
             fi

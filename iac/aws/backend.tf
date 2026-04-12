@@ -6,7 +6,7 @@
 
 terraform {
   backend "s3" {
-    bucket         = "promata-terraform-state"
+    bucket         = "promata-tfstate-017820685038"
     key            = "aws/prod/terraform.tfstate"
     region         = "sa-east-1"
     encrypt        = true
