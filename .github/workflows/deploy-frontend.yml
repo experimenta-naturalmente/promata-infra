@@ -135,22 +135,35 @@ jobs:
       - name: Resolve S3 Bucket Name
         id: s3
         run: |
+          set -uo pipefail
           BUCKET="${{ vars.AWS_S3_BUCKET }}"
-          if [ -z "$BUCKET" ]; then
-            echo "❌ AWS_S3_BUCKET variable not configured!"
-            echo "   Set it in Settings > Variables > Actions with the bucket name from Terraform output."
-            exit 1
+
+          if [ -n "$BUCKET" ] && aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "✅ Using configured bucket: $BUCKET"
+            echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
-          # Verify bucket is accessible
-          if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
-            echo "❌ Bucket '$BUCKET' not found or not accessible."
+          if [ -n "$BUCKET" ]; then
+            echo "⚠️ Configured AWS_S3_BUCKET='$BUCKET' is not accessible. Falling back to discovery..."
+          else
+            echo "ℹ️ AWS_S3_BUCKET variable not set. Discovering bucket from Terraform-managed infrastructure..."
+          fi
+
+          # Fallback: bucket criado pelo Terraform em modules/storage/main.tf
+          # Padrão: promata-prod-static-assets-{random_id_hex}
+          DISCOVERED=$(aws s3api list-buckets \
+            --query "Buckets[?starts_with(Name, 'promata-prod-static-assets-')].Name | [0]" \
+            --output text)
+
+          if [ -z "$DISCOVERED" ] || [ "$DISCOVERED" = "None" ]; then
+            echo "❌ No bucket matching 'promata-prod-static-assets-*' found."
             echo "   Run deploy-infra-full.yml first to create the infrastructure."
             exit 1
           fi
 
-          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
-          echo "✅ Using bucket: $BUCKET"
+          echo "✅ Discovered bucket: $DISCOVERED"
+          echo "bucket=$DISCOVERED" >> $GITHUB_OUTPUT
 
       - name: Sync to S3
         run: |

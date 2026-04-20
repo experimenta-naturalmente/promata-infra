@@ -1,14 +1,6 @@
 name: Deploy Infrastructure (AWS)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'iac/aws/**'
-      - '.github/workflows/infra-aws.yml'
-  pull_request:
-    paths:
-      - 'iac/aws/**'
   workflow_dispatch:
     inputs:
       action:
@@ -20,6 +12,11 @@ on:
           - plan
           - apply
           - destroy
+
+# Serializa com deploy-infra-full.yml para evitar disputa pelo mesmo state lock
+concurrency:
+  group: terraform-aws-prod
+  cancel-in-progress: false
 
 env:
   AWS_REGION: sa-east-1

@@ -22,6 +22,11 @@ on:
           - config-only # Only Ansible (requires existing infra)
           - destroy     # Destroy infrastructure
 
+# Serializa com infra-aws.yml para evitar disputa pelo mesmo Terraform state lock
+concurrency:
+  group: terraform-aws-prod
+  cancel-in-progress: false
+
 env:
   AWS_REGION: sa-east-1
   TF_VERSION: 1.10.0
@@ -418,32 +423,60 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
+          set -uo pipefail
           EC2_IP="${{ steps.ec2.outputs.ip }}"
           S3_BUCKET="${{ needs.terraform.outputs.s3_bucket }}"
           ORG="AGES-Pro-Mata"
           REPOS=("${{ github.repository }}" "$ORG/backend" "$ORG/frontend")
 
           if [ -z "$GH_TOKEN" ]; then
-            echo "⚠️ GIT_TOKEN not configured. Set secrets manually."
-            exit 0
+            echo "❌ GIT_TOKEN not configured. Cannot propagate secrets to backend/frontend repos."
+            echo "   Configure a PAT with 'repo' scope (or fine-grained: Secrets + Variables read/write on org repos)."
+            exit 1
           fi
 
+          if [ ! -s ~/.ssh/promata.pem ]; then
+            echo "❌ SSH key file ~/.ssh/promata.pem is missing or empty."
+            exit 1
+          fi
+
+          if [ -z "$EC2_IP" ] || [ -z "$S3_BUCKET" ]; then
+            echo "❌ Missing required outputs (EC2_IP='$EC2_IP', S3_BUCKET='$S3_BUCKET')."
+            exit 1
+          fi
+
+          FAILED=0
           for REPO in "${REPOS[@]}"; do
             echo "📝 Configuring $REPO..."
 
-            if [ -n "$EC2_IP" ]; then
-              echo "$EC2_IP" | gh secret set EC2_HOST --repo "$REPO" 2>/dev/null && \
-                echo "  ✅ EC2_HOST saved" || echo "  ⚠️ Failed to save EC2_HOST"
+            if echo "$EC2_IP" | gh secret set EC2_HOST --repo "$REPO"; then
+              echo "  ✅ EC2_HOST saved"
+            else
+              echo "  ❌ Failed to save EC2_HOST on $REPO"
+              FAILED=1
             fi
 
-            gh secret set EC2_SSH_KEY --repo "$REPO" < ~/.ssh/promata.pem 2>/dev/null && \
-              echo "  ✅ EC2_SSH_KEY saved" || echo "  ⚠️ Failed to save EC2_SSH_KEY"
+            if gh secret set EC2_SSH_KEY --repo "$REPO" --body-file ~/.ssh/promata.pem; then
+              echo "  ✅ EC2_SSH_KEY saved"
+            else
+              echo "  ❌ Failed to save EC2_SSH_KEY on $REPO"
+              FAILED=1
+            fi
 
-            if [ -n "$S3_BUCKET" ]; then
-              gh variable set AWS_S3_BUCKET --repo "$REPO" --body "$S3_BUCKET" 2>/dev/null && \
-                echo "  ✅ AWS_S3_BUCKET=$S3_BUCKET saved" || echo "  ⚠️ Failed to save AWS_S3_BUCKET"
+            if gh variable set AWS_S3_BUCKET --repo "$REPO" --body "$S3_BUCKET"; then
+              echo "  ✅ AWS_S3_BUCKET=$S3_BUCKET saved"
+            else
+              echo "  ❌ Failed to save AWS_S3_BUCKET on $REPO"
+              FAILED=1
             fi
           done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo ""
+            echo "❌ One or more secret/variable updates failed."
+            echo "   Check that GIT_TOKEN has admin access to AGES-Pro-Mata/backend and AGES-Pro-Mata/frontend."
+            exit 1
+          fi
 
           echo ""
           echo "✅ All repos configured successfully"
